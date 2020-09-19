@@ -23,10 +23,22 @@ data class LoadedFileNotification(
          */
         val textTimeStamp: java.time.Instant?)
 
-/// Watch a directory recursively and load modified files as strings.
-class FileLoader(private val rootPath: Path,
-                 private val channel: Channel<LoadedFileNotification> = Channel(),
-                 private val delayBeforeRead: Long = 20)
+/**
+ * Watch a directory recursively and load modified files as strings.
+ */
+class FileLoader(
+        /**
+         * Path of the directory to watch.
+         */
+        private val rootPath: Path,
+        /**
+         * Channel to use for output.
+         */
+        private val channel: Channel<LoadedFileNotification> = Channel(),
+        /**
+         * Delay before read, must be higher than you filesystems modification time resolution.
+         */
+        private val delayBeforeRead: Long = 20)
     : Channel<LoadedFileNotification> by channel {
 
     // TODO ?should we use another scope
