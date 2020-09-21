@@ -108,23 +108,27 @@ class FileWatcher(
                         else -> FileNotification.EventKind.Modified
                     }
 
-                    var mTime: FileTime? = null
-                    if (eventKind == FileNotification.EventKind.Created ||
-                            eventKind == FileNotification.EventKind.Modified) {
-                        mTime = Files.readAttributes(eventPath, BasicFileAttributes::class.java).lastModifiedTime()
-                    }
+                    try {
+                        var mTime: FileTime? = null
+                        if (eventKind == FileNotification.EventKind.Created ||
+                                eventKind == FileNotification.EventKind.Modified) {
+                            mTime = Files.readAttributes(eventPath, BasicFileAttributes::class.java).lastModifiedTime()
+                        }
 
-                    val event = FileNotification(eventKind, eventPath, mTime)
+                        val event = FileNotification(eventKind, eventPath, mTime)
 
-                    // if a folder is created or deleted, reregister the whole tree recursively
-                    if ((event.eventKind == FileNotification.EventKind.Created
-                                    || event.eventKind == FileNotification.EventKind.Deleted)
-                            && event.filePath.toFile().isDirectory) {
-                        needsReregister = true
-                    }
+                        // if a folder is created or deleted, reregister the whole tree recursively
+                        if ((event.eventKind == FileNotification.EventKind.Created
+                                        || event.eventKind == FileNotification.EventKind.Deleted)
+                                && event.filePath.toFile().isDirectory) {
+                            needsReregister = true
+                        }
 
-                    if (event.filePath.toFile().isFile) {
-                        channel.send(event)
+                        if (event.filePath.toFile().isFile) {
+                            channel.send(event)
+                        }
+                    } catch (e: NoSuchFileException) {
+                        println(e)
                     }
                 }
 
