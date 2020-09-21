@@ -55,8 +55,6 @@ class IndexDb {
         withWriteLock {
             if (indexes.contains(path) && indexes[path]!!.modificationTime <= fileIndex.modificationTime)
                 indexes[path] = fileIndex
-            else
-                println(" TODO fail")
         }
 
     /**
