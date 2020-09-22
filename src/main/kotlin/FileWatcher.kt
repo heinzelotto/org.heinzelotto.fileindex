@@ -1,5 +1,6 @@
 package org.heinzelotto.fileindex
 
+import com.sun.nio.file.SensitivityWatchEventModifier
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import java.nio.file.*
@@ -75,7 +76,10 @@ class FileWatcher(
         }
         Files.walkFileTree(rootPath, object : SimpleFileVisitor<Path>() {
             override fun preVisitDirectory(subPath: Path, attrs: BasicFileAttributes): FileVisitResult {
-                watchKeys.add(subPath.register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE))
+                watchKeys.add(subPath.register(
+                    watchService,
+                    arrayOf(ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE),
+                    SensitivityWatchEventModifier.HIGH))
                 return FileVisitResult.CONTINUE
             }
         })

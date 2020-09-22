@@ -14,3 +14,9 @@ Current and planned features:
 - [X] Indexing database that allows for efficient querying of words across all watched files.
 - [X] Unit tests
 - [X] Demo application
+
+# Caveats
+
+This uses kotlin coroutines, so make sure your Java and Kotlin distribution is current. It works for me on Java 14.0.2 and kotlin 1.4.10.
+
+Please also note that since the default WatchService is very slow on MacOS. To alleviate this the library uses a flag from `com.sun.nio`, which is not portable across the different JVM implementations. 
