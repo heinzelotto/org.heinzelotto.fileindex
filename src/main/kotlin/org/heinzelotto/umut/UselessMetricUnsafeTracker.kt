@@ -17,6 +17,7 @@ fun main(args: Array<String>) {
     val rootDir = File(args[0])
     val index = FileIndex(rootDir.toPath())
 
+    // since the index accepts queries already during the initial scan, this query is likely to return zero results
     val initialUnsafes = index.query("unsafe")
     var unsafeCount = initialUnsafes.size
     println("Your code contains $unsafeCount usages of the word \"unsafe\":")
