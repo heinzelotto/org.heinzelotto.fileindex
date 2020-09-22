@@ -9,7 +9,8 @@ Current and planned features:
 - [X] Concurrent file watcher implementation.
 - [X] Concurrent file loader implementation based on the file watcher that reloads a file on modification events.
 - [X] Lock-free consistency guarantee that a file that is successfully loaded has not been written to while it was being read.
-- [ ] Event debouncing (firing fewer events for multiple changes to the same file)
+- [X] Event debouncing (firing fewer events for multiple changes to the same file)
+- [ ] Better directory handling (copying, moving and removing entire directories currently shows problems)
 - [X] Lexer infrastructure that allows you to specify how files are to be tokenized for indexing. 
 - [X] Indexing database that allows for efficient querying of words across all watched files.
 - [X] Unit tests
