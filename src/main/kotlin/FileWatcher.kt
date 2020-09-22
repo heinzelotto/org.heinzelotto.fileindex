@@ -12,20 +12,21 @@ import java.nio.file.attribute.FileTime
  * Wrapper around a file watcher event.
  */
 data class FileNotification(
-        /**
-         * The kind of file event.
-         */
-        val eventKind: EventKind,
+    /**
+     * The kind of file event.
+     */
+    val eventKind: EventKind,
 
-        /**
-         * Absolute path of modified file.
-         */
-        val filePath: Path,
+    /**
+     * Absolute path of modified file.
+     */
+    val filePath: Path,
 
-        /**
-         * For Create and Modify events, current modification time of the file.
-         */
-        val mTime: FileTime?) {
+    /**
+     * For Create and Modify events, current modification time of the file.
+     */
+    val mTime: FileTime?
+) {
     /**
      * File system event kind.
      */
@@ -51,15 +52,15 @@ data class FileNotification(
  * Watch a directory recursively.
  */
 class FileWatcher(
-        /**
-         * Path of the directory to watch.
-         */
-        private val rootPath: Path,
-        /**
-         * Channel to use for output.
-         */
-        private val channel: Channel<FileNotification> = Channel())
-    : Channel<FileNotification> by channel {
+    /**
+     * Path of the directory to watch.
+     */
+    private val rootPath: Path,
+    /**
+     * Channel to use for output.
+     */
+    private val channel: Channel<FileNotification> = Channel()
+) : Channel<FileNotification> by channel {
 
     // TODO ?should we use another scope
     private val coroutineScope: CoroutineScope = GlobalScope
@@ -76,10 +77,13 @@ class FileWatcher(
         }
         Files.walkFileTree(rootPath, object : SimpleFileVisitor<Path>() {
             override fun preVisitDirectory(subPath: Path, attrs: BasicFileAttributes): FileVisitResult {
-                watchKeys.add(subPath.register(
-                    watchService,
-                    arrayOf(ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE),
-                    SensitivityWatchEventModifier.HIGH))
+                watchKeys.add(
+                    subPath.register(
+                        watchService,
+                        arrayOf(ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE),
+                        SensitivityWatchEventModifier.HIGH
+                    )
+                )
                 return FileVisitResult.CONTINUE
             }
         })
@@ -115,7 +119,8 @@ class FileWatcher(
                     try {
                         var mTime: FileTime? = null
                         if (eventKind == FileNotification.EventKind.Created ||
-                                eventKind == FileNotification.EventKind.Modified) {
+                            eventKind == FileNotification.EventKind.Modified
+                        ) {
                             mTime = Files.readAttributes(eventPath, BasicFileAttributes::class.java).lastModifiedTime()
                         }
 
@@ -123,8 +128,9 @@ class FileWatcher(
 
                         // if a folder is created or deleted, reregister the whole tree recursively
                         if ((event.eventKind == FileNotification.EventKind.Created
-                                        || event.eventKind == FileNotification.EventKind.Deleted)
-                                && event.filePath.toFile().isDirectory) {
+                                    || event.eventKind == FileNotification.EventKind.Deleted)
+                            && event.filePath.toFile().isDirectory
+                        ) {
                             needsReregister = true
                         }
 
@@ -132,8 +138,10 @@ class FileWatcher(
                             channel.send(event)
                         }
                     } catch (e: NoSuchFileException) {
-                        println("FileWatcher: tried to access a non-existing file while creating an event. "+
-                                "It was probably a short-lived file.")
+                        println(
+                            "FileWatcher: tried to access a non-existing file while creating an event. " +
+                                    "It was probably a short-lived file."
+                        )
                         e.printStackTrace()
                     }
                 }
