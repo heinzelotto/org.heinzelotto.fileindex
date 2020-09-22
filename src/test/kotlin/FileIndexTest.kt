@@ -35,6 +35,9 @@ class FileIndexTest {
 
             val index = FileIndex(testDirPath)
 
+            // wait until the index has been updated
+            assertPredicatePolled(10000, 10) { index.query("world").isNotEmpty() }
+
             // currently one occurrence of "world"
             assertEquals(1, index.query("world").size)
 

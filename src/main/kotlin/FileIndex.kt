@@ -40,40 +40,40 @@ class FileIndex(
     private val indexDb = IndexDb()
 
     init {
-        // create initial index before watching
-        Files.walkFileTree(rootPath, object : SimpleFileVisitor<Path>() {
-            override fun visitFile(file: Path?, attrs: BasicFileAttributes?): FileVisitResult {
-                if (attrs != null && attrs.isRegularFile) {
 
-                    try {
-                        val fileContents = Files.readString(file!!)
-
-                        indexDb.createFileIndex(
-                            file,
-                            IndexDb.SingleFileIndex(
-                                tokenizeFile(
-                                    file,
-                                    fileContents,
-                                    lexer
-                                ),
-                                Instant.now()
-                            )
-                        )
-                    } catch (e: MalformedInputException) {
-                        println("FileIndex: cannot decode file, it is not utf-8: ${file!!}")
-                    }
-                    catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                }
-
-                return super.visitFile(file, attrs)
-            }
-        })
-
-        // start maintaining the index
         coroutineScope.launch(Dispatchers.IO) {
 
+            // create initial index before watching
+            Files.walkFileTree(rootPath, object : SimpleFileVisitor<Path>() {
+                override fun visitFile(file: Path?, attrs: BasicFileAttributes?): FileVisitResult {
+                    if (attrs != null && attrs.isRegularFile) {
+
+                        try {
+                            val fileContents = Files.readString(file!!)
+
+                            indexDb.createFileIndex(
+                                file,
+                                IndexDb.SingleFileIndex(
+                                    tokenizeFile(
+                                        file,
+                                        fileContents,
+                                        lexer
+                                    ),
+                                    Instant.now()
+                                )
+                            )
+                        } catch (e: MalformedInputException) {
+                            println("FileIndex: cannot decode file, it is not utf-8: ${file!!}")
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+
+                    return super.visitFile(file, attrs)
+                }
+            })
+
+            // start maintaining the index
             for (noti in fileLoaderService) {
                 when (noti.notification.eventKind) {
 
