@@ -103,7 +103,7 @@ class FileIndex(
                             )
                         )
 
-                    FileNotification.EventKind.Created ->
+                    FileNotification.EventKind.Deleted ->
                         indexDb.deleteFileIndex(noti.notification.filePath)
                 }
             }
