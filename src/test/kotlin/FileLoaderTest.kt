@@ -132,8 +132,8 @@ class FileLoaderTest {
 
             assert(loader.isClosedForSend)
 
-            // some modifications are successfully read
-            assert(successfulFiles.get() > 2)
+            // some modifications are successfully read (because of delaying and throttling, this might only be one)
+            assert(successfulFiles.get() > 0)
 
             // some modifications were re-modified too quickly so they were discarded. (*2 because currently each
             // modification fires two watcher modification events, one for erase, one for write. We could implement
