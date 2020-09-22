@@ -6,7 +6,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
@@ -21,8 +20,11 @@ class FileLoaderTest {
     @Test
     fun `content of watched file is loaded correctly`() {
         runBlocking {
-            val cwd = File(System.getProperty("user.dir"))
-            val testDirPath = cwd.toPath().resolve("testfileloader")
+
+            val testTmpDir = createTempDir("testfileloader")
+            val testDirPath = testTmpDir.toPath()
+            println("using temporary test dir $testDirPath")
+
             val testFilePath = testDirPath.resolve("testfileloader.txt")
             Files.deleteIfExists(testFilePath)
             Files.createDirectories(testDirPath)
@@ -60,6 +62,8 @@ class FileLoaderTest {
 
             loader.close()
             assert(loader.isClosedForReceive)
+
+            testTmpDir.deleteRecursively()
         }
     }
 
@@ -72,8 +76,11 @@ class FileLoaderTest {
     @Test
     fun `file loader consistency`() {
         runBlocking {
-            val cwd = File(System.getProperty("user.dir"))
-            val testDirPath = cwd.toPath().resolve("testfileloaderconsistency")
+
+            val testTmpDir = createTempDir("testfileloaderconsistency")
+            val testDirPath = testTmpDir.toPath()
+            println("using temporary test dir $testDirPath")
+
             val testFilePath = testDirPath.resolve("testfileloaderconsistency.txt")
             Files.deleteIfExists(testFilePath)
             Files.createDirectories(testDirPath)
@@ -137,6 +144,8 @@ class FileLoaderTest {
 
             // some modifications are reduced into a single one by the watcher. At most we get two per modification
             assert(successfulFiles.get() < 2 * ('z' - '0'))
+
+            testTmpDir.deleteRecursively()
         }
     }
 }

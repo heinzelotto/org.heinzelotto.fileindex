@@ -6,7 +6,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertEquals
-import java.io.File
 import java.nio.file.Files
 
 @ExperimentalCoroutinesApi
@@ -14,8 +13,11 @@ class FileWatcherTest {
     @Test
     fun `file creation event fired`() {
         runBlocking {
-            val cwd = File(System.getProperty("user.dir"))
-            val testDirPath = cwd.toPath().resolve("testfilewatcher")
+
+            val testTmpDir = createTempDir("testfilewatcher")
+            val testDirPath = testTmpDir.toPath()
+            println("using temporary test dir $testDirPath")
+
             val testFilePath = testDirPath.resolve("testfilewatcher.txt")
             Files.deleteIfExists(testFilePath)
             Files.createDirectories(testDirPath)
@@ -40,16 +42,20 @@ class FileWatcherTest {
             assert(eventReceived)
 
             watcher.close()
-
             assert(watcher.isClosedForSend)
+
+            testTmpDir.deleteRecursively()
         }
     }
 
     @Test
     fun `recursive watching works, subdir is also watched`() {
         runBlocking {
-            val cwd = File(System.getProperty("user.dir"))
-            val testDirPath = cwd.toPath().resolve("testfilewatcherrecursive")
+
+            val testTmpDir = createTempDir("testfilewatcherrecursive")
+            val testDirPath = testTmpDir.toPath()
+            println("using temporary test dir $testDirPath")
+
             val testDirPathSub = testDirPath.resolve("subDir")
             val testFilePath = testDirPathSub.resolve("testfilewatcherrecursive.txt")
 
@@ -83,6 +89,8 @@ class FileWatcherTest {
 
             watcher.close()
             assert(watcher.isClosedForReceive)
+
+            testTmpDir.deleteRecursively()
         }
     }
 }

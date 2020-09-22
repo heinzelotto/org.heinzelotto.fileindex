@@ -4,7 +4,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.TimeoutException
 
@@ -16,8 +15,11 @@ class FileIndexTest {
     @Test
     fun `content of watched file is loaded correctly`() {
         runBlocking {
-            val cwd = File(System.getProperty("user.dir"))
-            val testDirPath = cwd.toPath().resolve("testfileindex")
+
+            val testTmpDir = createTempDir("testfileindex")
+            val testDirPath = testTmpDir.toPath()
+            println("using temporary test dir $testDirPath")
+
             val testFilePathA = testDirPath.resolve("testfileindexa.txt")
             val testFilePathB = testDirPath.resolve("testfileindxexb.txt")
 
@@ -45,6 +47,8 @@ class FileIndexTest {
 
             // now two occurrences of "world"
             assertEquals(2, index.query("world").size)
+
+            testTmpDir.deleteRecursively()
         }
     }
 }
