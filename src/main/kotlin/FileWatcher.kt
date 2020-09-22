@@ -51,6 +51,7 @@ data class FileNotification(
 /**
  * Watch a directory recursively.
  */
+@ExperimentalCoroutinesApi
 class FileWatcher(
     /**
      * Path of the directory to watch.
@@ -67,6 +68,9 @@ class FileWatcher(
     private val watchService: WatchService = FileSystems.getDefault().newWatchService()
     private var watchKeys = ArrayList<WatchKey>()
 
+    // track which folders we currently watch, since we can't get this information when they are deleted
+    private val watchedFolders = HashSet<Path>()
+
     /**
      * Recursively add watched directories, starting at the root.
      */
@@ -75,6 +79,7 @@ class FileWatcher(
             forEach { it.cancel() }
             clear()
         }
+        watchedFolders.clear()
         Files.walkFileTree(rootPath, object : SimpleFileVisitor<Path>() {
             override fun preVisitDirectory(subPath: Path, attrs: BasicFileAttributes): FileVisitResult {
                 watchKeys.add(
@@ -84,6 +89,25 @@ class FileWatcher(
                         SensitivityWatchEventModifier.HIGH
                     )
                 )
+                watchedFolders.add(subPath)
+                return FileVisitResult.CONTINUE
+            }
+        })
+    }
+
+    /**
+     * Recursively send create events for all files in a directory.
+     */
+    private fun sendCreateEventsForSubdir(dir: Path) {
+        Files.walkFileTree(dir, object : SimpleFileVisitor<Path>() {
+            override fun visitFile(filePath: Path, attrs: BasicFileAttributes): FileVisitResult {
+
+                val mTime = Files.readAttributes(filePath, BasicFileAttributes::class.java).lastModifiedTime()
+                val event = FileNotification(FileNotification.EventKind.Created, filePath, mTime)
+
+                runBlocking {
+                    channel.send(event)
+                }
                 return FileVisitResult.CONTINUE
             }
         })
@@ -126,23 +150,31 @@ class FileWatcher(
 
                         val event = FileNotification(eventKind, eventPath, mTime)
 
-                        // if a folder is created or deleted, reregister the whole tree recursively
-                        if ((event.eventKind == FileNotification.EventKind.Created
-                                    || event.eventKind == FileNotification.EventKind.Deleted)
-                            && event.filePath.toFile().isDirectory
-                        ) {
-                            needsReregister = true
+                        val isDirectory = if (event.eventKind == FileNotification.EventKind.Deleted) {
+                            event.filePath in watchedFolders
+                        } else {
+                            event.filePath.toFile().isDirectory
                         }
 
-                        if (event.filePath.toFile().isFile) {
+                        if (!isDirectory) {
                             channel.send(event)
+                        } else {
+                            // if a folder is created or deleted, reregister the whole tree recursively
+                            if (event.eventKind == FileNotification.EventKind.Created
+                                || event.eventKind == FileNotification.EventKind.Deleted
+                            ) {
+                                needsReregister = true
+                            }
+
+                            // if the folder is created, recursively send create events for all contained files.
+                            if (event.eventKind == FileNotification.EventKind.Created)
+                                sendCreateEventsForSubdir(event.filePath)
                         }
                     } catch (e: NoSuchFileException) {
                         println(
                             "FileWatcher: tried to access a non-existing file while creating an event. " +
-                                    "It was probably a short-lived file."
+                                    "It was probably a short-lived file. ${e.file}"
                         )
-                        e.printStackTrace()
                     }
                 }
 
@@ -161,7 +193,7 @@ class FileWatcher(
     override fun close(cause: Throwable?): Boolean {
         watchKeys.apply {
             forEach { it.cancel() }
-            clear()
+                    clear()
         }
 
         return channel.close(cause)
