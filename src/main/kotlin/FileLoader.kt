@@ -109,10 +109,10 @@ class FileLoader(
                                         }
                                     } catch (e: MalformedInputException) {
                                         println("FileLoader: cannot decode file, it is not utf-8: ${noti.filePath}")
-                                    } catch (e: NoSuchFileException) {
+                                    } catch (e: java.nio.file.NoSuchFileException) {
                                         println(
                                             "FileLoader: tried to access a non-existing file while creating an event. " +
-                                                    "It was probably a short-lived file."
+                                                    "It was probably a short-lived file. ${e.file}"
                                         )
                                     } catch (e: Exception) {
                                         e.printStackTrace()
