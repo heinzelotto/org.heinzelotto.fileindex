@@ -31,6 +31,7 @@ data class LoadedFileNotification(
 /**
  * Watch a directory recursively and load modified files as strings.
  */
+@ExperimentalCoroutinesApi
 class FileLoader(
     /**
      * Path of the directory to watch.

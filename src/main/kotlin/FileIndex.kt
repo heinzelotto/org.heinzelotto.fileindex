@@ -1,9 +1,6 @@
 package org.heinzelotto.fileindex
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import java.nio.charset.MalformedInputException
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
@@ -25,6 +22,7 @@ fun wordTokenizerIgnoringWhitespace(text: String): Map<String, List<IntRange>> =
  * The index is automatically updated whenever a file is created, modified or deleted. The index allows for safe
  * concurrent query access.
  */
+@ExperimentalCoroutinesApi
 class FileIndex(
     /**
      * Path of the directory to watch.
