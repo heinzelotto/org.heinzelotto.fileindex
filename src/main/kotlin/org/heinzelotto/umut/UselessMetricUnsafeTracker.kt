@@ -2,7 +2,6 @@ package org.heinzelotto.umut
 
 import org.heinzelotto.fileindex.FileIndex
 import java.io.File
-import java.nio.file.Path
 import kotlin.system.exitProcess
 
 fun usage() {

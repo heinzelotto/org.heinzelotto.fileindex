@@ -119,7 +119,7 @@ class FileLoaderTest {
 
                 // each file is filled with a string consisting of a single digit
                 val c: Byte = ('0' + (i % 10)).toByte()
-                val ar = ByteArray(testFileTextLength) { _ -> c }
+                val ar = ByteArray(testFileTextLength) { c }
                 Files.write(testFilePath, ar)
 
                 // introduce varying delays to have some files successfully read and some being discarded

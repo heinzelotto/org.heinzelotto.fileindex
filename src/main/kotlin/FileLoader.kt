@@ -2,7 +2,6 @@ package org.heinzelotto.fileindex
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.BasicFileAttributes
@@ -35,7 +34,7 @@ class FileLoader(
     /**
      * Path of the directory to watch.
      */
-    private val rootPath: Path,
+    rootPath: Path,
     /**
      * Channel to use for output.
      */
@@ -43,7 +42,7 @@ class FileLoader(
     /**
      * Delay before read, must be higher than you filesystems modification time resolution.
      */
-    private val delayBeforeRead: Long = 50
+    delayBeforeRead: Long = 50
 ) : Channel<LoadedFileNotification> by channel {
 
     // TODO ?should we use another scope

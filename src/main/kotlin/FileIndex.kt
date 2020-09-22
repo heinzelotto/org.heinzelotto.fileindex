@@ -4,7 +4,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import java.io.File
 import java.nio.charset.MalformedInputException
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
@@ -30,7 +29,7 @@ class FileIndex(
     /**
      * Path of the directory to watch.
      */
-    private val rootPath: Path,
+    rootPath: Path,
     /**
      * The tokenization algorithm. Defaults to a simple split-at-whitespace tokenizer.
      */
@@ -50,10 +49,10 @@ class FileIndex(
                         val fileContents = Files.readString(file!!)
 
                         indexDb.createFileIndex(
-                            file!!,
+                            file,
                             IndexDb.SingleFileIndex(
                                 tokenizeFile(
-                                    file!!,
+                                    file,
                                     fileContents,
                                     lexer
                                 ),
