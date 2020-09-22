@@ -94,6 +94,6 @@ class IndexDb {
 /**
  * Range within a file representing a search match.
  */
-class FilePosition(
+data class FilePosition(
         val filePath: Path,
         val range: IntRange)

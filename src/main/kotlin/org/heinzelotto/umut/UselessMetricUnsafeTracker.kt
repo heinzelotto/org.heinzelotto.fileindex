@@ -17,8 +17,13 @@ fun main(args: Array<String>) {
     val rootDir = File(args[0])
     val index = FileIndex(rootDir.toPath())
 
-    var unsafeCount = index.query("unsafe").size
-    println("Your code contains $unsafeCount usages of the word \"unsafe\".")
+    val initialUnsafes = index.query("unsafe")
+    var unsafeCount = initialUnsafes.size
+    println("Your code contains $unsafeCount usages of the word \"unsafe\":")
+    for (iu in initialUnsafes) {
+        println(iu)
+    }
+    println()
     if (unsafeCount > 0)
         println("If this makes you feel uncomfortable, please change it")
     else
