@@ -2,6 +2,7 @@ package org.heinzelotto.fileindex
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import java.nio.charset.MalformedInputException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.BasicFileAttributes
@@ -106,9 +107,15 @@ class FileLoader(
                                         if (mTimeAfterRead == noti.mTime) {
                                             channel.send(LoadedFileNotification(noti, fileContents, readTimeStamp))
                                         }
+                                    } catch (e: MalformedInputException) {
+                                        println("FileLoader: cannot decode file, it is not utf-8: ${noti.filePath}")
+                                    } catch (e: NoSuchFileException) {
+                                        println(
+                                            "FileLoader: tried to access a non-existing file while creating an event. " +
+                                                    "It was probably a short-lived file."
+                                        )
                                     } catch (e: Exception) {
-                                        // common cases are java.nio.file.NoSuchFileException (file is deleted again)
-                                        // or java.nio.charset.MalformedInputException (file is not in utf-8)
+                                        e.printStackTrace()
                                     }
                                 }
                             }

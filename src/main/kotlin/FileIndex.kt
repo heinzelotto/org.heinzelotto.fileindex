@@ -60,10 +60,10 @@ class FileIndex(
                             )
                         )
                     } catch (e: MalformedInputException) {
-                        println("cannot decode file, it is not utf-8: ${file!!}")
+                        println("FileIndex: cannot decode file, it is not utf-8: ${file!!}")
                     }
                     catch (e: Exception) {
-                        println(e)
+                        e.printStackTrace()
                     }
                 }
 

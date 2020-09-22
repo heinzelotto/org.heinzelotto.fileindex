@@ -132,7 +132,9 @@ class FileWatcher(
                             channel.send(event)
                         }
                     } catch (e: NoSuchFileException) {
-                        println(e)
+                        println("FileWatcher: tried to access a non-existing file while creating an event. "+
+                                "It was probably a short-lived file.")
+                        e.printStackTrace()
                     }
                 }
 
