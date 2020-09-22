@@ -1,16 +1,17 @@
 package org.heinzelotto.fileindex
 
-import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
 
+@ExperimentalCoroutinesApi
 class FileLoaderTest {
 
     /**
@@ -33,40 +34,32 @@ class FileLoaderTest {
 
             assert(!loader.isClosedForSend)
 
-            var createEventReceived = false
-            var modifyEventReceived = false
-            launch {
-                loader.consumeEach { loadedFileNotification ->
-                    println("$loadedFileNotification")
-                    when (loadedFileNotification.notification.eventKind) {
-                        FileNotification.EventKind.Created -> {
-                            Assertions.assertEquals("", loadedFileNotification.text?.trim())
-                            createEventReceived = true
-                        }
-                        FileNotification.EventKind.Modified -> {
-                            Assertions.assertEquals(testFileText, loadedFileNotification.text?.trim())
-                            modifyEventReceived = true
-                        }
-                        FileNotification.EventKind.Deleted -> assert(false)
-                    }
-                }
+            val createJob = launch {
+                val loadedFileNotification = loader.receive()
+                assertEquals(FileNotification.EventKind.Created, loadedFileNotification.notification.eventKind)
+
+                assertEquals("", loadedFileNotification.text?.trim())
             }
 
-            assert(!loader.isClosedForSend)
+            assert(!loader.isClosedForReceive)
 
-            // add a file and wait until it is registered
+            // add a file and wait until it is registered correctly
             Files.createFile(testFilePath)
-            delay(100)
-            assert(createEventReceived)
+            createJob.join()
 
-            // write some data to the file and wait until it is registered
+            val modifyJob = launch {
+                val loadedFileNotification = loader.receive()
+                assertEquals(FileNotification.EventKind.Modified, loadedFileNotification.notification.eventKind)
+
+                assertEquals(testFileText, loadedFileNotification.text?.trim())
+            }
+
+            // write some data to the file and wait until it is registered correctly
             testFilePath.toFile().printWriter().use { it.println(testFileText) }
-            delay(100)
-            assert(modifyEventReceived)
+            modifyJob.join()
 
             loader.close()
-
-            assert(loader.isClosedForSend)
+            assert(loader.isClosedForReceive)
         }
     }
 
@@ -85,23 +78,30 @@ class FileLoaderTest {
             Files.deleteIfExists(testFilePath)
             Files.createDirectories(testDirPath)
             val testFileTextLength = 100000
-            val testModificationIterations = 100
 
             val loader = FileLoader(testDirPath)
 
-            assert(!loader.isClosedForSend)
+            assert(!loader.isClosedForReceive)
 
             val successfulFiles = AtomicInteger(0)
-            launch {
-                loader.consumeEach { loadedFileNotification ->
+            val job = launch {
+                var char = '0'
+                while (char != 'z') {
+                    val loadedFileNotification = loader.receive()
                     when (loadedFileNotification.notification.eventKind) {
                         FileNotification.EventKind.Created, FileNotification.EventKind.Modified -> {
-                            //println("File Loaded: ${loadedFileNotification.notification} text length: ${loadedFileNotification.text?.length} instant: ${loadedFileNotification.textTimeStamp} text: ${loadedFileNotification.text?.first()}")
+                            println(
+                                "File Loaded: " +
+                                        "text: ${loadedFileNotification.text?.first()} " +
+                                        "${loadedFileNotification.notification} " +
+                                        "instant: ${loadedFileNotification.textTimeStamp} " +
+                                        "text length: ${loadedFileNotification.text?.length} "
+                            )
                             val trimText = loadedFileNotification.text?.trim()
-                            Assertions.assertEquals(testFileTextLength, trimText?.length)
+                            assertEquals(testFileTextLength, trimText?.length)
 
                             // ensure that the text is read correctly
-                            val char = trimText!!.first()
+                            char = trimText!!.first()
                             assert(trimText.all { it == char })
 
                             successfulFiles.getAndAdd(1)
@@ -111,34 +111,32 @@ class FileLoaderTest {
                 }
             }
 
-            assert(!loader.isClosedForSend)
+            assert(!loader.isClosedForReceive)
 
             // Write to the file in quick succession with varying delays between the writes so that some writes are
             // registered correctly and some are discarded.
-            for (i in 0 until testModificationIterations) {
+            for (i in '0'..'z') {
 
                 // each file is filled with a string consisting of a single digit
-                val c: Byte = ('0' + (i % 10)).toByte()
+                val c: Byte = i.toByte()
                 val ar = ByteArray(testFileTextLength) { c }
                 Files.write(testFilePath, ar)
 
                 // introduce varying delays to have some files successfully read and some being discarded
                 delay(Random.nextLong() % 100)
             }
-            // wait a bit for the watcher to process
-            delay(100)
+
+            // wait until the last file has been successfully loaded
+            job.join()
 
             loader.close()
-
-            assert(loader.isClosedForSend)
+            assert(loader.isClosedForReceive)
 
             // some modifications are successfully read (because of delaying and throttling, this might only be one)
             assert(successfulFiles.get() > 0)
 
-            // some modifications were re-modified too quickly so they were discarded. (*2 because currently each
-            // modification fires two watcher modification events, one for erase, one for write. We could implement
-            // event debouncing in the File loader to get rid of most of these.)
-            assert(successfulFiles.get() < 2 * testModificationIterations)
+            // some modifications are reduced into a single one by the watcher. At most we get two per modification
+            assert(successfulFiles.get() < 2 * ('z' - '0'))
         }
     }
 }

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.nio.file.Files
+import java.util.concurrent.TimeoutException
 
 class FileIndexTest {
 
@@ -35,19 +36,34 @@ class FileIndexTest {
             // currently one occurrence of "world"
             assertEquals(1, index.query("world").size)
 
-            // create empty file B and wait until it is registered
+            // write file B's content and wait until it is registered
             Files.createFile(testFilePathB)
-            delay(100)
-
-            // still only one occurrence of "world"
-            assertEquals(1, index.query("world").size)
-
-            // update file B's content and wait until it is registered
             testFilePathB.toFile().printWriter().use { it.println(testFileTextB) }
-            delay(100)
+
+            // wait until the index has been updated
+            assertPredicatePolled(10000, 10) { index.query("world").size != 1 }
 
             // now two occurrences of "world"
             assertEquals(2, index.query("world").size)
         }
     }
+}
+
+/**
+ * Polls a predicate in steps of `interval` until it is fulfilled or `timeout` has passed.
+ */
+suspend fun assertPredicatePolled(timeout: Long, interval: Long, predicate: () -> Boolean) {
+
+    var remainingTimeout = timeout
+    while (remainingTimeout > 0) {
+        if (predicate()) {
+            println("Predicate fulfilled, took ${timeout - remainingTimeout}/$timeout ms")
+            return
+        }
+
+        remainingTimeout -= interval
+        delay(interval)
+    }
+
+    throw TimeoutException()
 }

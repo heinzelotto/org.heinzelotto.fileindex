@@ -1,6 +1,6 @@
 package org.heinzelotto.fileindex
 
-import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import java.io.File
 import java.nio.file.Files
 
+@ExperimentalCoroutinesApi
 class FileWatcherTest {
     @Test
     fun `file creation event fired`() {
@@ -24,19 +25,18 @@ class FileWatcherTest {
             assert(!watcher.isClosedForSend)
 
             var eventReceived = false
-            launch {
-                watcher.consumeEach { fileNotification ->
-                    assertEquals(FileNotification.EventKind.Created, fileNotification.eventKind)
-                    assertEquals(testFilePath, fileNotification.filePath.toAbsolutePath())
-                    eventReceived = true
-                }
+            val job = launch {
+                val fileNotification = watcher.receive()
+                assertEquals(FileNotification.EventKind.Created, fileNotification.eventKind)
+                assertEquals(testFilePath, fileNotification.filePath.toAbsolutePath())
+                eventReceived = true
             }
 
             assert(!watcher.isClosedForSend)
 
             // add a file and wait until it is registered
             Files.createFile(testFilePath)
-            delay(100)
+            job.join()
             assert(eventReceived)
 
             watcher.close()
@@ -60,31 +60,29 @@ class FileWatcherTest {
 
             assert(!watcher.isClosedForSend)
 
-            var eventReceived = false
-            launch {
-                watcher.consumeEach { fileNotification ->
-                    when (fileNotification.eventKind) {
-                        FileNotification.EventKind.Created -> assertEquals(fileNotification.filePath, testFilePath)
-                        else -> assert(false)
-                    }
-                    eventReceived = true
+            val job = launch {
+                val fileNotification = watcher.receive()
+                when (fileNotification.eventKind) {
+                    FileNotification.EventKind.Created -> assertEquals(fileNotification.filePath, testFilePath)
+                    else -> assert(false)
                 }
             }
 
-            assert(!watcher.isClosedForSend)
+            assert(!watcher.isClosedForReceive)
 
             // create a subdir and wait until it is registered
             Files.createDirectory(testDirPathSub)
-            delay(100)
 
-            // add a file in the subdir and wait until it is registered
+            // we need a delay here because FileWatcher does not emit directory creation events, so there is no direct
+            // way of being notified about the operation finishing
+            delay(2000)
+
+            // add a file in the subdir and check that it is registered
             Files.createFile(testFilePath)
-            delay(100)
-            assert(eventReceived)
+            job.join()
 
             watcher.close()
-
-            assert(watcher.isClosedForSend)
+            assert(watcher.isClosedForReceive)
         }
     }
 }
