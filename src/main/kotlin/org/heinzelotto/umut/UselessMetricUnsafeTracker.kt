@@ -19,6 +19,7 @@ fun main(args: Array<String>) {
 
     val rootDir = File(args[0])
     val index = FileIndex(rootDir.toPath())
+    index.start()
 
     runBlocking { index.awaitInitialScan() }
     assert(index.initialScanCompleted())

@@ -27,18 +27,24 @@ class FileIndex(
     /**
      * Path of the directory to watch.
      */
-    rootPath: Path,
+    private val rootPath: Path,
     /**
      * The tokenization algorithm. Defaults to a simple split-at-whitespace tokenizer.
      */
     private val lexer: ((String) -> Map<String, List<IntRange>>) = { wordTokenizerIgnoringWhitespace(it) }
 ) {
     private val coroutineScope: CoroutineScope = GlobalScope
-    private val fileLoaderService = FileLoader(rootPath)
+    private var fileLoaderService: FileLoader? = null
     private val indexDb = IndexDb()
     private val deferredUntilInitialScanComplete = CompletableDeferred<Unit>()
 
-    init {
+    /**
+     * Starts the initial scan and maintaining of the index.
+     *
+     * @note Must not be called more than once.
+     */
+    fun start() {
+        fileLoaderService = FileLoader(rootPath)
 
         coroutineScope.launch(Dispatchers.IO) {
 
@@ -76,7 +82,7 @@ class FileIndex(
             deferredUntilInitialScanComplete.complete(Unit)
 
             // start maintaining the index
-            for (noti in fileLoaderService) {
+            for (noti in fileLoaderService!!) {
                 when (noti.notification.eventKind) {
 
                     FileNotification.EventKind.Created ->
@@ -120,7 +126,7 @@ class FileIndex(
     /**
      * Check whether initial scan is complete.
      */
-    fun initialScanCompleted() : Boolean = deferredUntilInitialScanComplete.isCompleted
+    fun initialScanCompleted(): Boolean = deferredUntilInitialScanComplete.isCompleted
 
     /**
      * Query all occurrences of a lexeme across all indexed files.
