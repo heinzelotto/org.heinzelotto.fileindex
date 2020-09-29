@@ -1,5 +1,6 @@
 package org.heinzelotto.fileindex
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -7,6 +8,7 @@ import org.junit.jupiter.api.Test
 import java.nio.file.Files
 import java.util.concurrent.TimeoutException
 
+@ExperimentalCoroutinesApi
 class FileIndexTest {
 
     /**
