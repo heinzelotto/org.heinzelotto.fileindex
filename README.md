@@ -9,6 +9,7 @@ Current and planned features:
 - [X] Concurrent file watcher implementation.
 - [X] Concurrent file loader implementation based on the file watcher that reloads a file on modification events.
 - [X] Lock-free consistency guarantee that a file that is successfully loaded has not been written to while it was being read.
+- [ ] Discarding of partially written files that are still opened for writing by another process.
 - [X] Event debouncing (firing fewer events for multiple changes to the same file)
 - [ ] Better directory handling (copying, moving and removing entire directories currently shows problems)
 - [ ] Adding and removing roots to the watcher and indexer without a full reindex. 
@@ -16,6 +17,7 @@ Current and planned features:
 - [X] Indexing database that allows for efficient querying of words across all watched files.
 - [X] Unit tests
 - [X] Demo application
+- [X] Support for utf-8 encoded files.
 
 # Caveats
 
