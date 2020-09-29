@@ -118,6 +118,11 @@ class FileIndex(
     suspend fun awaitInitialScan() = deferredUntilInitialScanComplete.await()
 
     /**
+     * Check whether initial scan is complete.
+     */
+    fun initialScanCompleted() : Boolean = deferredUntilInitialScanComplete.isCompleted
+
+    /**
      * Query all occurrences of a lexeme across all indexed files.
      */
     fun query(needle: String): List<FilePosition> =

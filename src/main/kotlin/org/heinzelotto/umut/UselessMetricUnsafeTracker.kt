@@ -21,6 +21,7 @@ fun main(args: Array<String>) {
     val index = FileIndex(rootDir.toPath())
 
     runBlocking { index.awaitInitialScan() }
+    assert(index.initialScanCompleted())
 
     // since the index accepts queries already during the initial scan, this query is likely to return zero results
     val initialUnsafes = index.query("unsafe")
