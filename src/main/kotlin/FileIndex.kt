@@ -36,6 +36,7 @@ class FileIndex(
     private val coroutineScope: CoroutineScope = GlobalScope
     private val fileLoaderService = FileLoader(rootPath)
     private val indexDb = IndexDb()
+    private val deferredUntilInitialScanComplete = CompletableDeferred<Unit>()
 
     init {
 
@@ -70,6 +71,9 @@ class FileIndex(
                     return super.visitFile(file, attrs)
                 }
             })
+
+            // mark initial scan as completed
+            deferredUntilInitialScanComplete.complete(Unit)
 
             // start maintaining the index
             for (noti in fileLoaderService) {
@@ -107,6 +111,11 @@ class FileIndex(
             }
         }
     }
+
+    /**
+     * Suspends until the initial indexing scan has concluded.
+     */
+    suspend fun awaitInitialScan() = deferredUntilInitialScanComplete.await()
 
     /**
      * Query all occurrences of a lexeme across all indexed files.

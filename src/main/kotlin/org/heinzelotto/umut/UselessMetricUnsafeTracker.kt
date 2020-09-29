@@ -1,5 +1,7 @@
 package org.heinzelotto.umut
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
 import org.heinzelotto.fileindex.FileIndex
 import java.io.File
 import kotlin.system.exitProcess
@@ -8,6 +10,7 @@ fun usage() {
     println("Rust safety checker. Usage: \"umut directory_to_watch\"")
 }
 
+@ExperimentalCoroutinesApi
 fun main(args: Array<String>) {
     if (args.size != 1) {
         usage()
@@ -16,6 +19,8 @@ fun main(args: Array<String>) {
 
     val rootDir = File(args[0])
     val index = FileIndex(rootDir.toPath())
+
+    runBlocking { index.awaitInitialScan() }
 
     // since the index accepts queries already during the initial scan, this query is likely to return zero results
     val initialUnsafes = index.query("unsafe")
