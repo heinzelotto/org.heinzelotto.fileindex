@@ -130,7 +130,7 @@ class FileLoaderTest {
                 Files.write(testFilePath, ar)
 
                 // introduce varying delays to have some files successfully read and some being discarded
-                delay(Random.nextLong() % 100)
+                delay(Random.nextLong() % 250)
             }
 
             // wait until the last file has been successfully loaded

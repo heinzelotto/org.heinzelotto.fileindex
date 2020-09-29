@@ -44,7 +44,7 @@ class FileLoader(
     /**
      * Delay before read, must be higher than you filesystems modification time resolution.
      */
-    delayBeforeRead: Long = 50
+    delayBeforeRead: Long = 200
 ) : Channel<LoadedFileNotification> by channel {
 
     // TODO ?should we use another scope
