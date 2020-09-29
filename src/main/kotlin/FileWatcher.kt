@@ -61,7 +61,7 @@ class FileWatcher(
      * Channel to use for output.
      */
     private val channel: Channel<FileNotification> = Channel()
-) : Channel<FileNotification> by channel {
+) : ReceiveChannel<FileNotification> by channel {
 
     // TODO ?should we use another scope
     private val coroutineScope: CoroutineScope = GlobalScope
@@ -122,7 +122,7 @@ class FileWatcher(
 
         coroutineScope.launch(Dispatchers.IO) {
 
-            while (!isClosedForSend) {
+            while (!channel.isClosedForSend) {
                 if (needsReregister) {
                     registerPaths()
                     needsReregister = false
@@ -181,22 +181,22 @@ class FileWatcher(
                 if (!key.reset()) {
                     key.cancel()
                     // the watch service closes, we also close our channel
-                    close()
+                    channel.close()
                     break
-                } else if (isClosedForSend) {
+                } else if (channel.isClosedForSend) {
                     break
                 }
             }
         }
     }
 
-    override fun close(cause: Throwable?): Boolean {
+    override fun cancel(cause: CancellationException?) {
         watchKeys.apply {
             forEach { it.cancel() }
                     clear()
         }
 
-        return channel.close(cause)
+        return channel.cancel(cause)
     }
 }
 

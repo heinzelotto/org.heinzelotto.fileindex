@@ -2,6 +2,7 @@ package org.heinzelotto.fileindex
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
 import java.nio.charset.MalformedInputException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -45,7 +46,7 @@ class FileLoader(
      * Delay before read, must be higher than you filesystems modification time resolution.
      */
     delayBeforeRead: Long = 200
-) : Channel<LoadedFileNotification> by channel {
+) : ReceiveChannel<LoadedFileNotification> by channel {
 
     // TODO ?should we use another scope
     private val coroutineScope: CoroutineScope = GlobalScope
@@ -130,10 +131,10 @@ class FileLoader(
         }
     }
 
-    override fun close(cause: Throwable?): Boolean {
+    override fun cancel(cause: CancellationException?) {
         fileWatcher.cancel()
 
-        return channel.close(cause)
+        return channel.cancel(cause)
     }
 }
 

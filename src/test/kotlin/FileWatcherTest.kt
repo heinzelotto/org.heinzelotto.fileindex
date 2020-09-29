@@ -24,7 +24,7 @@ class FileWatcherTest {
 
             val watcher = FileWatcher(testDirPath)
 
-            assert(!watcher.isClosedForSend)
+            assert(!watcher.isClosedForReceive)
 
             var eventReceived = false
             val job = launch {
@@ -34,15 +34,15 @@ class FileWatcherTest {
                 eventReceived = true
             }
 
-            assert(!watcher.isClosedForSend)
+            assert(!watcher.isClosedForReceive)
 
             // add a file and wait until it is registered
             Files.createFile(testFilePath)
             job.join()
             assert(eventReceived)
 
-            watcher.close()
-            assert(watcher.isClosedForSend)
+            watcher.cancel()
+            assert(watcher.isClosedForReceive)
 
             testTmpDir.deleteRecursively()
         }
@@ -64,7 +64,7 @@ class FileWatcherTest {
 
             val watcher = FileWatcher(testDirPath)
 
-            assert(!watcher.isClosedForSend)
+            assert(!watcher.isClosedForReceive)
 
             val job = launch {
                 val fileNotification = watcher.receive()
@@ -87,7 +87,7 @@ class FileWatcherTest {
             Files.createFile(testFilePath)
             job.join()
 
-            watcher.close()
+            watcher.cancel()
             assert(watcher.isClosedForReceive)
 
             testTmpDir.deleteRecursively()

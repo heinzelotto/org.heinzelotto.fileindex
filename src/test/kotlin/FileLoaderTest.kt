@@ -34,7 +34,7 @@ class FileLoaderTest {
 
             val loader = FileLoader(testDirPath)
 
-            assert(!loader.isClosedForSend)
+            assert(!loader.isClosedForReceive)
 
             val createJob = launch {
                 val loadedFileNotification = loader.receive()
@@ -60,7 +60,7 @@ class FileLoaderTest {
             testFilePath.toFile().printWriter().use { it.println(testFileText) }
             modifyJob.join()
 
-            loader.close()
+            loader.cancel()
             assert(loader.isClosedForReceive)
 
             testTmpDir.deleteRecursively()
@@ -136,7 +136,7 @@ class FileLoaderTest {
             // wait until the last file has been successfully loaded
             job.join()
 
-            loader.close()
+            loader.cancel()
             assert(loader.isClosedForReceive)
 
             // some modifications are successfully read (because of delaying and throttling, this might only be one)
