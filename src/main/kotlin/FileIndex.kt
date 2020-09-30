@@ -60,7 +60,6 @@ class FileIndex(
                                 file,
                                 IndexDb.SingleFileIndex(
                                     tokenizeFile(
-                                        file,
                                         fileContents,
                                         lexer
                                     ),
@@ -90,7 +89,6 @@ class FileIndex(
                             noti.notification.filePath,
                             IndexDb.SingleFileIndex(
                                 tokenizeFile(
-                                    noti.notification.filePath,
                                     noti.text!!,
                                     lexer
                                 ),
@@ -103,7 +101,6 @@ class FileIndex(
                             noti.notification.filePath,
                             IndexDb.SingleFileIndex(
                                 tokenizeFile(
-                                    noti.notification.filePath,
                                     noti.text!!,
                                     lexer
                                 ),
@@ -138,11 +135,9 @@ class FileIndex(
      * Given a file, use a lexer to generate an index of lexeme occurrences (as FilePositions).
      */
     private fun tokenizeFile(
-        filePath: Path,
         fileText: String,
         lexer: (String) -> Map<String, List<IntRange>>
-    ): Map<String, List<FilePosition>> =
-        lexer(fileText).mapValues { entry -> entry.value.map { intRange -> FilePosition(filePath, intRange) } }
-
+    ): Map<String, List<Position>> =
+        lexer(fileText).mapValues { entry -> entry.value.map { intRange -> Position(intRange) } }
 
 }

@@ -12,7 +12,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
  */
 class IndexDb {
 
-    // TODO: later maybe store some file ID instead of the full path
     private val indexes = HashMap<Path, SingleFileIndex>()
     private val rwLock = ReentrantReadWriteLock(true)
 
@@ -20,17 +19,17 @@ class IndexDb {
      * Write lock the RW lock and execute some code.
      */
     private inline fun withWriteLock(body: () -> Unit) =
-            try {
-                rwLock.writeLock().lock()
-                body()
-            } finally {
-                rwLock.writeLock().unlock()
-            }
+        try {
+            rwLock.writeLock().lock()
+            body()
+        } finally {
+            rwLock.writeLock().unlock()
+        }
 
     /**
      * Read lock the RW lock and execute some code.
      */
-    private inline fun<T> withReadLock(body: () -> T): T =
+    private inline fun <T> withReadLock(body: () -> T): T =
         try {
             rwLock.readLock().lock()
             body()
@@ -70,24 +69,31 @@ class IndexDb {
      */
     fun query(needle: String): List<FilePosition> =
         withReadLock {
-            indexes.flatMap { entry -> entry.value.singleFileHashMap[needle] ?: arrayListOf() }
+            indexes.flatMap { entry ->
+                (entry.value.singleFileHashMap[needle] ?: arrayListOf()).map { pos ->
+                    FilePosition(
+                        entry.key,
+                        pos.range
+                    )
+                }
+            }
         }
 
     /**
      * The search string -> occurrences map index for a single file.
      */
     class SingleFileIndex(
-            /**
-             * Collections of matches for each Lexeme.
-             *
-             * For simplicity, the file path is stored with every match, trading space for time complexity.
-             */
-            val singleFileHashMap: Map<String, List<FilePosition>>,
+        /**
+         * Collections of matches for each Lexeme.
+         *
+         * For simplicity, the file path is stored with every match, trading space for time complexity.
+         */
+        val singleFileHashMap: Map<String, List<Position>>,
 
-            /**
-             * Modification time
-             */
-            val modificationTime: Instant
+        /**
+         * Modification time
+         */
+        val modificationTime: Instant
     )
 }
 
@@ -95,5 +101,11 @@ class IndexDb {
  * Range within a file representing a search match.
  */
 data class FilePosition(
-        val filePath: Path,
-        val range: IntRange)
+    val filePath: Path,
+    val range: IntRange
+)
+
+/**
+ * Range representing a search match within a file, but without reference to the file.
+ */
+data class Position(val range: IntRange)
